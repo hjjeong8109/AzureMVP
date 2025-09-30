@@ -1,7 +1,4 @@
 import streamlit as st
-
-# 브라우저 탭 타이틀 설정
-st.set_page_config(page_title="ktt 운영자 매뉴얼")
 import os
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
@@ -9,6 +6,12 @@ from openai import AzureOpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# 브라우저 탭 타이틀 설정
+st.set_page_config(
+    page_title="ktt 운영자 매뉴얼",
+    page_icon="./favicon.png"
+)
 
 SEARCH_ENDPOINT = os.getenv("AZURE_SEARCH_ENDPOINT")
 SEARCH_API_KEY = os.getenv("AZURE_SEARCH_API_KEY")
@@ -28,9 +31,11 @@ def get_search_results(query):
         include_total_count=True,
     )
     docs = []
+    scores = []
     for r in results:
         docs.append(r["merged_content"])
-    return docs
+        scores.append(r["@search.score"])
+    return docs, scores
 
 openai_client = AzureOpenAI(
     api_version=os.getenv("AZURE_OPENAI_VERSION"),
@@ -85,15 +90,22 @@ if user_input:
     with st.chat_message("user"):
         st.markdown(user_input)
     with st.spinner("검색 중..."):
-        docs = get_search_results(user_input)
+        docs, scores = get_search_results(user_input)
         answer = get_answer(docs, user_input)
     with st.chat_message("assistant"):
         st.markdown(answer)
+        # 신뢰도 시각화
+        if scores:
+            max_score = max(scores)
+            # 0~1 점수를 1~5 별로 변환
+            star_count = int(round(max_score))
+            stars = '★' * star_count + '☆' * (5 - star_count)
+            st.markdown(f"<span style='font-size:18px; color:#f1c40f;'>신뢰도: {stars}</span>", unsafe_allow_html=True)
         with st.expander("참고 문서"):
             for i, doc in enumerate(docs, 1):
                 st.markdown(f"**문서 {i}:**\n{doc}")
     # 기록 저장
-    chat_history.append({"질문": user_input, "답변": answer})
+    chat_history.append({"질문": user_input, "답변": answer, "신뢰도": max_score})
     st.session_state["history"] = chat_history
 
 
