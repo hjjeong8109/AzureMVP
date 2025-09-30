@@ -1,0 +1,7 @@
+streamlit
+python-dotenv
+azure-core
+azure-common
+azure-identity
+azure-search-documents
+openai
