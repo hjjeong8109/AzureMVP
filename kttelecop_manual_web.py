@@ -101,11 +101,13 @@ if user_input:
             star_count = int(round(max_score))
             stars = '★' * star_count + '☆' * (5 - star_count)
             st.markdown(f"<span style='font-size:18px; color:#f1c40f;'>신뢰도: {stars}</span>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<span style='font-size:18px; color:#f1c40f;'>신뢰도: 정보 없음</span>", unsafe_allow_html=True)
         with st.expander("참고 문서"):
             for i, doc in enumerate(docs, 1):
                 st.markdown(f"**문서 {i}:**\n{doc}")
     # 기록 저장
-    chat_history.append({"질문": user_input, "답변": answer, "신뢰도": max_score})
+    chat_history.append({"질문": user_input, "답변": answer})
     st.session_state["history"] = chat_history
 
 
